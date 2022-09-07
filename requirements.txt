@@ -1,0 +1,6 @@
+cloudpickle==2.1.0
+gym==0.20.0
+gym-notices==0.0.8
+networkx==2.8.6
+numpy==1.23.2
+pyglet==1.5.26
