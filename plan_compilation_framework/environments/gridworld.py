@@ -2,11 +2,12 @@ from copy import deepcopy
 
 import os
 from typing import Any, TypedDict
+import imageio
 
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
-from gym.envs.classic_control.rendering import SimpleImageViewer
+# from gym.envs.classic_control.rendering import SimpleImageViewer
 
 import numpy as np
 import networkx as nx
@@ -47,10 +48,10 @@ class SimpleGridWorld(gym.Env):
                file_name=None,
                random_graph=False,
                stochastic=False,
-               terminal_reward=10.0,
+               terminal_reward=0.,
                move_reward=-1.0,
-               bump_reward=-5.0,
-               bomb_reward=-50.0,
+               bump_reward=-3.0,
+               bomb_reward=-5.0,
                size=(20, 20)):
     self.viewer = None
     self.display_grid = None
@@ -76,7 +77,7 @@ class SimpleGridWorld(gym.Env):
     self.state = deepcopy(self.start)
     self.done = False
 
-  def generate_random_graph(self, size, wall_prop=0.2, bomb_prop=0.25, min_allowed_prop=0.5):
+  def generate_random_graph(self, size, wall_prop=0., bomb_prop=0.25, min_allowed_prop=0.5):
     while True:
       total_size = size[0] * size[1]
 
@@ -124,6 +125,8 @@ class SimpleGridWorld(gym.Env):
           pass
         break
 
+    assert placed
+
     return set(wall_nodes), {goal_node}, set(bomb_nodes), list(allowed_start_nodes), start_node, size
 
   def load_from_file(self, file_name):
@@ -138,7 +141,7 @@ class SimpleGridWorld(gym.Env):
 
     return walls, goals, bombs, start_states, start, grid.shape
 
-  def reset(self):
+  def reset(self, *, seed=None, options=None):
     self.done = False
     if self.random_start:
       while (start := self.start_states[self.np_random.randint(len(self.start_states))]) in self.goals:
@@ -160,7 +163,7 @@ class SimpleGridWorld(gym.Env):
       new_state = self.take_action(action)
       reward = self.get_reward(new_state)
       self.state = new_state
-      return self.state, reward, self.done, {}
+      return self.state, reward, self.done, False, {}
 
   def take_action(self, action):
     if self.stochastic:
@@ -190,6 +193,7 @@ class SimpleGridWorld(gym.Env):
       return
 
     if self.display_grid is None:
+      # if mode == 'human':
       self.display_grid = np.multiply(np.ones((*self.shape, 3), dtype=np.uint8),
                                       np.array([0, 255, 0], dtype=np.uint8))
       for b in self.bombs:
@@ -199,6 +203,16 @@ class SimpleGridWorld(gym.Env):
       for g in self.goals:
         self.display_grid[g] = np.array([255, 0, 0])
       self.display_grid = self.display_grid.repeat(30, axis=0).repeat(30, axis=1)
+    # else:
+    #   wall = imageio.read(os.path.dirname(__file__) + '/sprites/wall_sm.png')
+    #   bomb = imageio.read(os.path.dirname(__file__) + '/sprites/lava_sm.png')
+    #   floor = imageio.read(os.path.dirname(__file__) + '/sprites/grass_sm.png')
+    #   robot1 = imageio.read(os.path.dirname(__file__) + '/sprites/robot_sm_grass.png')
+    #   robot2 = imageio.read(os.path.dirname(__file__) + '/sprites/robot_sm_grass.png')
+    #   goal = imageio.read(os.path.dirname(__file__) + '/sprites/gem_sm_grass.png')
+    #   self.display_grid = None
+    #   self.display_grid = np.multiply(np.ones((*self.shape, 3), dtype=np.uint8),
+    #                                   np.array([0, 255, 0], dtype=np.uint8))
 
     grid = self.display_grid.copy()
 

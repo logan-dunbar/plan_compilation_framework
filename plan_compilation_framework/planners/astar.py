@@ -33,8 +33,10 @@ class AStar(Planner):
       for action in self.np_random.permutation(range(self.model.action_space.n)):
         self.model.set_state(s)
 
-        s_p, r, done, info = self.model.step(action)
-        r = 1 if self.constant_reward else (-r)
+        s_p, r, done, trunc, info = self.model.step(action)
+        assert not trunc
+
+        r = 1. if self.constant_reward else (-r)
         new_cost = cost_so_far[s] + r
 
         if s_p not in cost_so_far or new_cost < cost_so_far[s_p]:
