@@ -1,0 +1,10 @@
+agent,seeds,early_reward,tail_reward,tail_expansions,total_expansions,learnt,truncated
+base,5,-1173 ± 310,-329 ± 106,0.0,"15,568",262,0
+A1_optimistic_q0,5,-5196 ± 1360,-469 ± 122,0.0,"85,714",264,0
+A2_td_everywhere,5,-3025 ± 1222,-341 ± 77,0.0,"39,747",264,0
+A3_no_horizon_reduction,5,-1625 ± 783,-318 ± 59,0.7,"69,118",262,0
+A4_no_latch,5,-901 ± 177,-387 ± 166,40.0,"67,056",210,0
+A5_no_explorer,5,-1649 ± 1764,-348 ± 27,0.1,"24,236",260,0
+A5_unbounded_quota,5,-5784 ± 1500,-453 ± 297,0.0,"2,171",264,0
+A6_no_value_ordering,5,-2221 ± 958,-317 ± 72,0.0,"4,899",263,0
+R1_plan_cache,5,-1439 ± 753,-352 ± 118,0.0,"5,510",261,0

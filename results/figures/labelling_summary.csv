@@ -1,0 +1,6 @@
+agent,seeds,early_reward,tail_reward,tail_expansions,total_expansions,learnt,truncated
+astar,5,-447 ± 81,-459 ± 94,299.4,"306,102",0,0
+L1_jsd,5,-1173 ± 310,-329 ± 106,0.0,"15,568",262,0
+L2_argmax_k10,5,-819 ± 450,-352 ± 80,0.6,"32,193",241,0
+L3_residual_e1_k10,5,-487 ± 99,-354 ± 93,83.1,"160,105",39,0
+L5_counts_n20,5,-723 ± 288,-386 ± 124,3.0,"49,544",228,0

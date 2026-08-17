@@ -1,0 +1,78 @@
+{
+  "env": {
+    "kind": "random",
+    "size": [
+      50,
+      50
+    ],
+    "file_name": null,
+    "wall_frac": 0.2,
+    "sand_frac": 0.25,
+    "min_reachable_frac": 0.5,
+    "stochastic": true,
+    "random_start": true,
+    "max_steps": 1000000,
+    "move_reward": -1.0,
+    "bump_reward": -5.0,
+    "sand_reward": -100.0
+  },
+  "agent": {
+    "kind": "pcf",
+    "planner": "astar",
+    "planner_kwargs": {},
+    "config": {
+      "gamma": 1.0,
+      "alpha": {
+        "start": 1.0,
+        "stop": 0.1
+      },
+      "alpha_per_visit": true,
+      "alpha_learnt": null,
+      "alpha_explorer": {
+        "value": 0.1
+      },
+      "eps_learner": {
+        "value": 0.1
+      },
+      "eps_explorer": {
+        "value": 0.1
+      },
+      "explore_prob": {
+        "start": 0.1,
+        "stop": 0.001,
+        "steps": 800
+      },
+      "quota_frac": {
+        "start": 0.2,
+        "stop": 0.05,
+        "steps": 800
+      },
+      "q0_learner": -1250.0,
+      "q0_explorer": 0.0,
+      "label_rule": [
+        "jsd",
+        {
+          "tau_d": {
+            "value": 0.1
+          },
+          "tau_l": {
+            "value": 0.85
+          },
+          "alpha_l": {
+            "value": 0.1
+          },
+          "latch": true
+        }
+      ],
+      "mc_until_learnt": true,
+      "reduce_horizon": true,
+      "use_explorer": true,
+      "bound_quota": true,
+      "value_ordered_goals": true,
+      "use_plan_cache": false
+    },
+    "use_cache": false,
+    "model_constant_cost": true
+  },
+  "episodes": 10000
+}
