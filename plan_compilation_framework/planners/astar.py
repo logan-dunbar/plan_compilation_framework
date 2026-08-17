@@ -1,48 +1,70 @@
-from queue import PriorityQueue
+"""A* over the planning model.
 
-from plan_compilation_framework.planners.plan import Plan
-from plan_compilation_framework.planners.planner import Planner
+With heuristic='zero' this is Dijkstra, matching the 2022 experiments (whose
+heuristic slot was a literal TODO). 'manhattan' uses the model's heuristic to
+the true goal; note it is only admissible for the unaugmented goal.
+"""
+from __future__ import annotations
+
+import heapq
+from itertools import count
+
+from plan_compilation_framework.planners.base import Plan, Planner, SearchResult
 
 
 class AStar(Planner):
-  def get_plan(self, start, is_goal=None):
-    is_goal = is_goal if is_goal else lambda x: False
+  def __init__(self, model, heuristic: str = 'zero', seed: int | None = None):
+    super().__init__(model, seed)
+    assert heuristic in ('zero', 'manhattan')
+    self.heuristic = heuristic
 
-    frontier = PriorityQueue()
+  def _h(self, s):
+    return self.model.heuristic(s) if self.heuristic == 'manhattan' else 0.
+
+  def plan(self, start, extra_goal=None) -> SearchResult:
+    model = self.model
+    is_goal = model.is_goal
+    tiebreak = count()
+
+    open_heap = [(self._h(start), next(tiebreak), start)]
+    g = {start: 0.}
     came_from = {start: None}
-    cost_so_far = {start: 0.}
+    closed = set()
+    expansions = 0
 
-    # (priority, state, action, done)
-    frontier.put((0, start, None, False))
+    while open_heap:
+      _, _, s = heapq.heappop(open_heap)
+      if s in closed:
+        continue
 
-    _ = self.model.reset()
+      if is_goal(s) or (extra_goal is not None and extra_goal(s)):
+        return SearchResult(self._reconstruct(s, came_from, g), expansions)
 
-    while not frontier.empty():
-      _, s, a, done = frontier.get()
+      closed.add(s)
+      expansions += 1
 
-      if done or is_goal(s):
-        plan = {}
-        state_and_action = came_from[s]
-        while state_and_action is not None:
-          state, action = state_and_action
-          plan[state] = action
-          state_and_action = came_from[state]
-        plan = dict(reversed(plan.items()))
-        return Plan(plan)
+      # randomised action order preserves the 2022 tie-breaking behaviour
+      for a in self.rng.permutation(model.n_actions):
+        a = int(a)
+        s_next = model.next_state(s, a)
+        if s_next == s:  # wall bump self-loop is never on a shortest path
+          continue
+        new_g = g[s] + model.cost(s, a, s_next)
+        if s_next not in g or new_g < g[s_next]:
+          g[s_next] = new_g
+          came_from[s_next] = (s, a)
+          heapq.heappush(open_heap, (new_g + self._h(s_next), next(tiebreak), s_next))
 
-      for action in self.np_random.permutation(range(self.model.action_space.n)):
-        self.model.set_state(s)
+    return SearchResult(None, expansions)
 
-        s_p, r, done, trunc, info = self.model.step(action)
-        assert not trunc
-
-        r = 1. if self.constant_reward else (-r)
-        new_cost = cost_so_far[s] + r
-
-        if s_p not in cost_so_far or new_cost < cost_so_far[s_p]:
-          cost_so_far[s_p] = new_cost
-          priority = new_cost + 0.  # TODO: heuristic
-          frontier.put((priority, s_p, action, done))
-          came_from[s_p] = (s, action)
-
-    raise Exception('No plan found')
+  @staticmethod
+  def _reconstruct(goal_state, came_from, g):
+    actions, path = {}, [goal_state]
+    node = came_from[goal_state]
+    while node is not None:
+      s, a = node
+      actions[s] = a
+      path.append(s)
+      node = came_from[s]
+    path.reverse()
+    return Plan(actions=actions, path=path, cost=g[goal_state])
