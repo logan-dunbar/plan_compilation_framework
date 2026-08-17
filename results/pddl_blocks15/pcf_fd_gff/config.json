@@ -1,0 +1,21 @@
+{
+  "domain": "blocks15",
+  "files": [
+    "/home/logan/dev/plan_work/downward-benchmarks/blocks/domain.pddl",
+    "/home/logan/dev/plan_work/downward-benchmarks/blocks/probBLOCKS-15-0.pddl"
+  ],
+  "agent": {
+    "mode": "pcf",
+    "engine": "gff"
+  },
+  "config": {
+    "episodes": 100000,
+    "walk_min": 5,
+    "walk_max": 30,
+    "max_episode_steps": 20000,
+    "q0": -1000.0,
+    "anneal_frac": 0.08,
+    "eps_anneal_frac": 0.5
+  },
+  "search": "pcf(lazy_greedy([hff], preferred=[hff], verbosity=silent), mode=pcf, episodes=100000, walk_min=5, walk_max=30, max_episode_steps=20000, q0=-1000.0, anneal=8000, eps_anneal=50000, log_file=episodes.csv, log_every=0, random_seed=2)"
+}
