@@ -32,7 +32,9 @@
         "value": 0.1
       },
       "eps_learner": {
-        "value": 0.1
+        "start": 0.1,
+        "stop": 0.01,
+        "steps": 500
       },
       "eps_explorer": {
         "value": 0.1

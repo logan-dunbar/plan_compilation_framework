@@ -1,0 +1,28 @@
+{
+  "env": {
+    "kind": "random",
+    "size": [
+      20,
+      20
+    ],
+    "file_name": null,
+    "wall_frac": 0.2,
+    "sand_frac": 0.25,
+    "min_reachable_frac": 0.5,
+    "stochastic": true,
+    "random_start": true,
+    "max_steps": 100000,
+    "move_reward": -1.0,
+    "bump_reward": -5.0,
+    "sand_reward": -100.0
+  },
+  "agent": {
+    "kind": "planner",
+    "planner": "rtdp",
+    "planner_kwargs": {},
+    "config": null,
+    "use_cache": false,
+    "model_constant_cost": true
+  },
+  "episodes": 1000
+}

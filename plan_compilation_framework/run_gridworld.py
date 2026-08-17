@@ -15,15 +15,32 @@ import argparse
 from dataclasses import replace
 
 from plan_compilation_framework.core import Constant, Harmonic, Linear
-from plan_compilation_framework.agents import PCFConfig, QLearningConfig
+from plan_compilation_framework.agents import (
+  PCFConfig, QLearningConfig, LearnedHeuristicConfig, DynaQConfig, ShapedQConfig,
+)
 from plan_compilation_framework.experiment import (
   AgentSpec, EnvSpec, ExperimentSpec, run_experiment,
 )
 from plan_compilation_framework.labelling import JsdConfig
 
 
-def paper_pcf_config(q0: float, anneal: int) -> PCFConfig:
-  """The ECML'22 hyperparameters (from the 2022 experiments.json).
+def eps_schedule(episodes: int):
+  """Learner epsilon: 0.1 -> 0.01 over the first half of the run.
+
+  Adopted for the resubmission after the C4 sensitivity sweep (constant 0.1
+  was the ECML'22 setting; annealing gave the best tail reward at identical
+  search cost). Applied identically to the Q-learning baseline for fairness.
+  """
+  return Linear(0.1, 0.01, max(1, episodes // 2))
+
+
+def qlearning_config(episodes: int) -> QLearningConfig:
+  return QLearningConfig(gamma=1.0, alpha=Constant(0.1), eps=eps_schedule(episodes), q0=0.)
+
+
+def paper_pcf_config(q0: float, anneal: int, episodes: int = 10_000) -> PCFConfig:
+  """The ECML'22 hyperparameters (from the 2022 experiments.json), with the
+  resubmission's annealed learner epsilon.
 
   alpha is the per-(state, action) harmonic of the 2022 code (first update a
   full replace, decaying to 0.1); the 0.4 in that config was the l-value rate
@@ -35,7 +52,7 @@ def paper_pcf_config(q0: float, anneal: int) -> PCFConfig:
     alpha_per_visit=True,
     alpha_learnt=None,
     alpha_explorer=Constant(0.1),
-    eps_learner=Constant(0.1),
+    eps_learner=eps_schedule(episodes),
     eps_explorer=Constant(0.1),
     explore_prob=Linear(0.1, 0.001, anneal),
     quota_frac=Linear(0.2, 0.05, anneal),
@@ -46,25 +63,41 @@ def paper_pcf_config(q0: float, anneal: int) -> PCFConfig:
   )
 
 
+def baseline_agents(episodes: int) -> dict:
+  """The comparison set: model-free, model-tied planners, value-in-search
+  baselines in both groundings, and the model-based / shaping RL baselines."""
+  eps = eps_schedule(episodes)
+  return {
+    'qlearning': AgentSpec('qlearning', config=qlearning_config(episodes)),
+    'astar': AgentSpec('planner', planner='astar'),
+    'rtdp': AgentSpec('planner', planner='rtdp'),
+    'lrtdp': AgentSpec('planner', planner='lrtdp'),
+    'lh_model': AgentSpec('learned_heuristic', config=LearnedHeuristicConfig(grounding='model')),
+    'lh_env': AgentSpec('learned_heuristic', config=LearnedHeuristicConfig(grounding='env')),
+    'dynaq': AgentSpec('dynaq', config=DynaQConfig(eps=eps, n_planning=10)),
+    'shaped_q': AgentSpec('shaped_q', planner='astar', config=ShapedQConfig(eps=eps)),
+  }
+
+
 def build_preset(name: str) -> ExperimentSpec:
   if name == 'smoke':
     env = EnvSpec(size=(12, 12), max_steps=50_000)
-    cfg = paper_pcf_config(q0=-300., anneal=100)
+    cfg = paper_pcf_config(q0=-300., anneal=100, episodes=300)
     return ExperimentSpec(
       name='smoke', env=env, episodes=300, seeds=2,
       agents={
-        'qlearning': AgentSpec('qlearning'),
+        'qlearning': AgentSpec('qlearning', config=qlearning_config(300)),
         'astar': AgentSpec('planner', planner='astar'),
         'pcf_astar': AgentSpec('pcf', planner='astar', config=cfg),
       })
 
   if name == 'validate':
     env = EnvSpec(size=(20, 20), max_steps=100_000)
-    cfg = paper_pcf_config(q0=-300., anneal=300)
+    cfg = paper_pcf_config(q0=-300., anneal=300, episodes=1000)
     return ExperimentSpec(
       name='validate', env=env, episodes=1000, seeds=3,
       agents={
-        'qlearning': AgentSpec('qlearning'),
+        'qlearning': AgentSpec('qlearning', config=qlearning_config(1000)),
         'astar': AgentSpec('planner', planner='astar'),
         'rtdp': AgentSpec('planner', planner='rtdp'),
         'lrtdp': AgentSpec('planner', planner='lrtdp'),
@@ -75,7 +108,7 @@ def build_preset(name: str) -> ExperimentSpec:
   if name == 'labelling':
     # L1-L5: swap only the learnt-state rule, hold everything else fixed
     env = EnvSpec(size=(20, 20), max_steps=100_000)
-    base = paper_pcf_config(q0=-300., anneal=300)
+    base = paper_pcf_config(q0=-300., anneal=300, episodes=1000)
     rules = {
       'L1_jsd': ('jsd', JsdConfig()),
       'L2_argmax_k10': ('argmax', 10, True),
@@ -91,7 +124,7 @@ def build_preset(name: str) -> ExperimentSpec:
 
   if name == 'ablations':
     env = EnvSpec(size=(20, 20), max_steps=100_000)
-    base = paper_pcf_config(q0=-300., anneal=300)
+    base = paper_pcf_config(q0=-300., anneal=300, episodes=1000)
     agents = {
       'base': AgentSpec('pcf', planner='astar', config=base),
       'A1_optimistic_q0': AgentSpec('pcf', planner='astar',
@@ -114,19 +147,21 @@ def build_preset(name: str) -> ExperimentSpec:
     return ExperimentSpec(name='ablations', env=env, episodes=1000, seeds=5,
                           agents=agents)
 
+  if name == 'baselines':
+    # quick 20x20 check of the full comparison set
+    env = EnvSpec(size=(20, 20), max_steps=100_000)
+    cfg = paper_pcf_config(q0=-300., anneal=300, episodes=1000)
+    agents = baseline_agents(1000)
+    agents['pcf_astar'] = AgentSpec('pcf', planner='astar', config=cfg)
+    return ExperimentSpec(name='baselines', env=env, episodes=1000, seeds=5, agents=agents)
+
   if name == 'paper':
     env = EnvSpec(size=(50, 50), max_steps=1_000_000)
-    cfg = paper_pcf_config(q0=-1250., anneal=800)
-    return ExperimentSpec(
-      name='paper', env=env, episodes=10_000, seeds=10,
-      agents={
-        'qlearning': AgentSpec('qlearning'),
-        'astar': AgentSpec('planner', planner='astar'),
-        'rtdp': AgentSpec('planner', planner='rtdp'),
-        'lrtdp': AgentSpec('planner', planner='lrtdp'),
-        'pcf_astar': AgentSpec('pcf', planner='astar', config=cfg),
-        'pcf_rtdp': AgentSpec('pcf', planner='rtdp', config=cfg),
-      })
+    cfg = paper_pcf_config(q0=-1250., anneal=800, episodes=10_000)
+    agents = baseline_agents(10_000)
+    agents['pcf_astar'] = AgentSpec('pcf', planner='astar', config=cfg)
+    agents['pcf_rtdp'] = AgentSpec('pcf', planner='rtdp', config=cfg)
+    return ExperimentSpec(name='paper', env=env, episodes=10_000, seeds=10, agents=agents)
 
   raise SystemExit(f'unknown preset {name!r}')
 
@@ -134,7 +169,7 @@ def build_preset(name: str) -> ExperimentSpec:
 def main():
   ap = argparse.ArgumentParser()
   ap.add_argument('--preset', required=True,
-                  choices=['smoke', 'validate', 'labelling', 'ablations', 'paper'])
+                  choices=['smoke', 'validate', 'labelling', 'ablations', 'baselines', 'paper'])
   ap.add_argument('--episodes', type=int, default=None)
   ap.add_argument('--seeds', type=int, default=None)
   ap.add_argument('--workers', type=int, default=None)

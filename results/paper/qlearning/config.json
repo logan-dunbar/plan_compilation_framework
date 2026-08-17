@@ -20,7 +20,18 @@
     "kind": "qlearning",
     "planner": null,
     "planner_kwargs": {},
-    "config": null,
+    "config": {
+      "gamma": 1.0,
+      "alpha": {
+        "value": 0.1
+      },
+      "eps": {
+        "start": 0.1,
+        "stop": 0.01,
+        "steps": 5000
+      },
+      "q0": 0.0
+    },
     "use_cache": false,
     "model_constant_cost": true
   },

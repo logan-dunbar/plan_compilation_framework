@@ -18,12 +18,12 @@ from plan_compilation_framework.experiment import (
   AgentSpec, EnvSpec, ExperimentSpec, run_experiment,
 )
 from plan_compilation_framework.labelling import JsdConfig
-from plan_compilation_framework.run_gridworld import paper_pcf_config
+from plan_compilation_framework.run_gridworld import paper_pcf_config, qlearning_config
 
 
 def main():
   env = EnvSpec(size=(50, 50), max_steps=1_000_000)
-  base = paper_pcf_config(q0=-1250., anneal=800)
+  base = paper_pcf_config(q0=-1250., anneal=800, episodes=10_000)
 
   variants = {
     'base': base,
@@ -31,8 +31,8 @@ def main():
     'alpha_learnt_0.4': replace(base, alpha_learnt=Constant(0.4)),
     'alpha_per_episode': replace(base, alpha_per_visit=False),
     # exploration
-    'anneal_eps': replace(base, eps_learner=Linear(0.1, 0.01, 5000)),
-    'longer_explore': paper_pcf_config(q0=-1250., anneal=5000),
+    'const_eps_0.1': replace(base, eps_learner=Constant(0.1)),   # the ECML'22 setting
+    'longer_explore': paper_pcf_config(q0=-1250., anneal=5000, episodes=10_000),
     'no_explorer': replace(base, use_explorer=False),
     # labelling thresholds
     'tau_l_0.95': replace(base, label_rule=('jsd', JsdConfig(tau_l=Constant(0.95)))),
@@ -49,7 +49,7 @@ def main():
 
   agents = {name: AgentSpec('pcf', planner='astar', config=cfg)
             for name, cfg in variants.items()}
-  agents['qlearning'] = AgentSpec('qlearning')
+  agents['qlearning'] = AgentSpec('qlearning', config=qlearning_config(10_000))
   agents['astar'] = AgentSpec('planner', planner='astar')
 
   spec = ExperimentSpec(name='sensitivity_50x50', env=env, agents=agents,

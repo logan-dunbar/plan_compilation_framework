@@ -22,6 +22,8 @@ from plan_compilation_framework.core import Transition
 from plan_compilation_framework.environments import GridWorld
 from plan_compilation_framework.agents import (
   PCFConfig, PlanCompiler, PlannerAgent, QLearning, QLearningConfig,
+  LearnedHeuristic, LearnedHeuristicConfig, DynaQ, DynaQConfig,
+  ShapedQLearning, ShapedQConfig,
 )
 from plan_compilation_framework.planners import PLANNERS
 
@@ -59,17 +61,23 @@ class EnvSpec:
 
 @dataclass
 class AgentSpec:
-  """kind: 'qlearning' | 'planner' | 'pcf'."""
+  """kind: 'qlearning' | 'planner' | 'pcf' | 'learned_heuristic' | 'dynaq' | 'shaped_q'."""
   kind: str
   planner: str | None = None        # 'astar' | 'rtdp' | 'lrtdp'
   planner_kwargs: dict = field(default_factory=dict)
-  config: object = None             # QLearningConfig | PCFConfig | None
+  config: object = None             # the agent's config dataclass, or None for defaults
   use_cache: bool = False           # planner-agent cache (R1)
   model_constant_cost: bool = True  # the inaccurate-model setting
 
   def build(self, env: GridWorld, seed: int):
     if self.kind == 'qlearning':
       return QLearning(env, self.config or QLearningConfig(), seed=seed)
+    if self.kind == 'learned_heuristic':
+      return LearnedHeuristic(env, self.config or LearnedHeuristicConfig(),
+                              model_constant_cost=self.model_constant_cost, seed=seed)
+    if self.kind == 'dynaq':
+      return DynaQ(env, self.config or DynaQConfig(),
+                   model_constant_cost=self.model_constant_cost, seed=seed)
 
     model = env.model(constant_cost=self.model_constant_cost)
     planner = PLANNERS[self.planner](model, seed=seed, **self.planner_kwargs)
@@ -77,6 +85,8 @@ class AgentSpec:
       return PlannerAgent(env, planner, use_cache=self.use_cache, seed=seed)
     if self.kind == 'pcf':
       return PlanCompiler(env, planner, self.config or PCFConfig(), seed=seed)
+    if self.kind == 'shaped_q':
+      return ShapedQLearning(env, planner, self.config or ShapedQConfig(), seed=seed)
     raise ValueError(f'unknown agent kind {self.kind!r}')
 
 
