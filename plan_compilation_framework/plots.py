@@ -35,9 +35,13 @@ LABELS = {
   'lh_model': 'Learned heuristic (model)', 'lh_env': 'Learned heuristic (env)',
   'dynaq': 'Dyna-Q', 'shaped_q': 'Plan-shaped Q',
 }
-# reference agents: fixed neutral styles so they read the same in every figure
+# reference agents: fixed styles so they read the same in every figure. The
+# PCF agents are the emphasis (black / deep red); the model-free and planner
+# references are neutral greys with distinct dashes.
 REFERENCE = {
   'base':      dict(color='black',   ls='-',  lw=2.2),
+  'pcf_astar': dict(color='black',   ls='-',  lw=2.2),
+  'pcf_rtdp':  dict(color='#b3001b', ls='-',  lw=2.0),
   'astar':     dict(color='#555555', ls='--', lw=1.6),
   'qlearning': dict(color='#999999', ls=':',  lw=1.8),
 }
@@ -124,7 +128,7 @@ def _draw_curves(axes, runs, agents, styles, window):
 
 def _reward_ylim(runs, agents, window):
   n_ep = len(next(iter(runs.values()))[0])
-  lo = min(np.percentile(_rolled(runs[a], lambda d: d.reward, window), 25, 0)[n_ep // 10:].min()
+  lo = min(np.median(_rolled(runs[a], lambda d: d.reward, window), 0)[n_ep // 5:].min()
            for a in agents)
   return lo * 1.15, 0
 
@@ -141,7 +145,12 @@ def curves(exp: str, runs):
               title='Search work')
   axes[1].set(xlabel='Episode', ylabel=f'Reward per episode (rolling {window})',
               title='Reward (median, IQR over seeds)', ylim=_reward_ylim(runs, agents, window))
-  axes[1].legend(fontsize=9, loc='lower right', ncol=1 if len(agents) <= 7 else 2)
+  if len(agents) <= 6:
+    axes[1].legend(fontsize=9, loc='lower right')
+  else:
+    handles, labels = axes[1].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='lower center', ncol=5, fontsize=9,
+               bbox_to_anchor=(0.5, -0.06))
   fig.suptitle(exp, y=1.02, fontsize=12)
   fig.tight_layout()
   _save(fig, f'{exp}_curves')
