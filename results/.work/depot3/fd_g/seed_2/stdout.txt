@@ -1,0 +1,10 @@
+[t=2.7591e-05s, 11100 KB] reading input...
+[t=0.00157048s, 11240 KB] done reading input!
+[t=0.00238406s, 11640 KB] Initializing context-enhanced additive heuristic...
+[t=0.00396232s, 12036 KB] Building successor generator...done!
+[t=0.00412242s, 12036 KB] peak memory difference for successor generator creation: 0 KB
+[t=0.0041451s, 12036 KB] time for successor generation creation: 8.5278e-05s
+[t=0.00416912s, 12036 KB] Variables: 26
+[t=0.00419266s, 12036 KB] FactPairs: 132
+[t=0.00421397s, 12036 KB] Bytes per state: 8
+[t=0.00452761s, 12300 KB] Plan Compilation Framework: mode=planner, episodes=100000

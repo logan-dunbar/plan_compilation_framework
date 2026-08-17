@@ -34,6 +34,7 @@ LABELS = {
   'pcf_astar': 'PC-A*', 'pcf_rtdp': 'PC-RTDP', 'base': 'PCF (base)',
   'lh_model': 'Learned heuristic (model)', 'lh_env': 'Learned heuristic (env)',
   'dynaq': 'Dyna-Q', 'shaped_q': 'Plan-shaped Q',
+  'fd_g': 'FD-G', 'fd_gff': 'FD-GFF', 'pcf_fd_g': 'PC-FD-G', 'pcf_fd_gff': 'PC-FD-GFF',
 }
 # reference agents: fixed styles so they read the same in every figure. The
 # PCF agents are the emphasis (black / deep red); the model-free and planner
@@ -44,9 +45,13 @@ REFERENCE = {
   'pcf_rtdp':  dict(color='#b3001b', ls='-',  lw=2.0),
   'astar':     dict(color='#555555', ls='--', lw=1.6),
   'qlearning': dict(color='#999999', ls=':',  lw=1.8),
+  'pcf_fd_g':  dict(color='black',   ls='-',  lw=2.2),
+  'pcf_fd_gff': dict(color='#b3001b', ls='-', lw=2.0),
+  'fd_g':      dict(color='#555555', ls='--', lw=1.6),
+  'fd_gff':    dict(color='#999999', ls=':',  lw=1.8),
 }
 ORDER = ['qlearning', 'astar', 'rtdp', 'lrtdp', 'lh_model', 'lh_env', 'dynaq',
-         'shaped_q', 'pcf_astar', 'pcf_rtdp', 'base']
+         'shaped_q', 'pcf_astar', 'pcf_rtdp', 'base', 'fd_g', 'fd_gff', 'pcf_fd_g', 'pcf_fd_gff']
 
 # grouped panels for wide sweeps: panel title -> agent-name prefixes/names
 GROUPS = {
@@ -210,7 +215,7 @@ def bars(exp: str, runs):
 
 def paired(exp: str, runs,
            pairs=(('pcf_astar', 'astar'), ('pcf_rtdp', 'rtdp'), ('pcf_astar', 'lrtdp'),
-                  ('pcf_astar', 'qlearning'))):
+                  ('pcf_astar', 'qlearning'), ('pcf_fd_g', 'fd_g'), ('pcf_fd_gff', 'fd_gff'))):
   """Per-seed tail reward of PCF vs a baseline on the same grid."""
   pairs = [(a, b) for a, b in pairs if a in runs and b in runs]
   if not pairs:

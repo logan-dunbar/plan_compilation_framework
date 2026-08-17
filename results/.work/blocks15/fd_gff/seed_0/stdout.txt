@@ -1,0 +1,13 @@
+[t=3.9589e-05s, 11100 KB] reading input...
+[t=0.00195259s, 11392 KB] done reading input!
+[t=0.00293692s, 11920 KB] Simplifying 1770 unary operators... done! [1350 unary operators]
+[t=0.00348687s, 12052 KB] time to simplify: 0.000598198s
+[t=0.00357163s, 12052 KB] Initializing additive heuristic...
+[t=0.00359755s, 12052 KB] Initializing FF heuristic...
+[t=0.00367535s, 12052 KB] Building successor generator...done!
+[t=0.00382777s, 12052 KB] peak memory difference for successor generator creation: 0 KB
+[t=0.00384993s, 12052 KB] time for successor generation creation: 8.5118e-05s
+[t=0.00387413s, 12052 KB] Variables: 31
+[t=0.00389628s, 12052 KB] FactPairs: 272
+[t=0.00391888s, 12052 KB] Bytes per state: 12
+[t=0.00418239s, 12184 KB] Plan Compilation Framework: mode=planner, episodes=100000
