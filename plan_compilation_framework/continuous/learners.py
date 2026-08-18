@@ -188,7 +188,7 @@ class MLP(Learner):
   """
   name = 'mlp'
 
-  def __init__(self, q0, label, size, hidden=64, lr=1e-3, batch=64, buffer=20_000, seed=0):
+  def __init__(self, q0, label, size, hidden=64, lr=1e-3, batch=64, buffer=20_000, seed=0, in_dim=2):
     super().__init__(q0, label)
     import jax, jax.numpy as jnp, optax
     self.jax, self.jnp, self.optax = jax, jnp, optax
@@ -197,7 +197,7 @@ class MLP(Learner):
 
     def init(key, out):
       k1, k2, k3 = jax.random.split(key, 3)
-      return {'w1': jax.random.normal(k1, (2, hidden)) * (2 / 2) ** 0.5 * 0.5, 'b1': jnp.zeros(hidden),
+      return {'w1': jax.random.normal(k1, (in_dim, hidden)) * (2 / in_dim) ** 0.5 * 0.5, 'b1': jnp.zeros(hidden),
               'w2': jax.random.normal(k2, (hidden, hidden)) * (2 / hidden) ** 0.5 * 0.5, 'b2': jnp.zeros(hidden),
               'w3': jax.random.normal(k3, (hidden, out)) * 0.01, 'b3': jnp.zeros(out)}
 
@@ -399,6 +399,111 @@ class GP(Learner):
         self._refit(a)
 
 
+# ------------------------------------------------------------------ RFF (JAX)
+
+class RFFFeatures:
+  """Random Fourier features approximating an RBF kernel of the given
+  lengthscale (Rahimi & Recht 2007): phi(s) = sqrt(2/D) cos(W s + b),
+  W ~ N(0, 1/lengthscale^2), b ~ U(0, 2 pi). A linear model on phi is a
+  Bayesian-linear/GP approximation whose reach is set by the lengthscale --
+  local by construction, and O(D) per prediction instead of a Cholesky.
+  """
+
+  def __init__(self, n_features=256, lengthscale=1.5, seed=0):
+    rng = np.random.default_rng(seed)
+    self.W = rng.normal(0., 1. / lengthscale, size=(2, n_features)).astype(np.float32)
+    self.b = rng.uniform(0., 2 * np.pi, size=n_features).astype(np.float32)
+    self.scale = np.sqrt(2. / n_features).astype(np.float32)
+    self.n_features = n_features
+
+  def __call__(self, S):
+    S = np.asarray(S, dtype=np.float32)
+    return self.scale * np.cos(S @ self.W + self.b)
+
+
+class RFFLinear(Learner):
+  """RFF features with a linear head per action (and a linear head for l),
+  trained by SGD: the cheap GP approximation. Q = q0 + w . phi(s)."""
+  name = 'rff_linear'
+
+  def __init__(self, q0, label, size, n_features=256, lengthscale=1.5, lr=0.05, seed=0):
+    super().__init__(q0, label)
+    self.phi = RFFFeatures(n_features, lengthscale, seed)
+    self.lr = lr
+    self.wq = np.zeros((N_ACTIONS, n_features), np.float32)
+    self.wl = np.zeros(n_features, np.float32)
+
+  def q(self, s):
+    return self.q0 + self.wq @ self.phi(s[None])[0]
+
+  def q_batch(self, P):
+    return self.q0 + self.phi(P) @ self.wq.T
+
+  def q_update(self, s, a, target):
+    f = self.phi(s[None])[0]
+    before = self.q0 + self.wq @ f
+    self.wq[a] += self.lr * (target - before[a]) * f
+    return before, self.q0 + self.wq @ f
+
+  def l(self, s):
+    return float(np.clip(self.wl @ self.phi(s[None])[0], 0., 1.))
+
+  def learnt_batch(self, P):
+    return np.clip(self.phi(P) @ self.wl, 0., 1.) > self.label.tau_l
+
+  def l_update(self, s, target):
+    f = self.phi(s[None])[0]
+    self.wl += self.label.alpha_l * (target - float(self.wl @ f)) * f
+
+
+class RFFMLP(MLP):
+  """RFF features feeding the same MLP as `MLP` (the phd-code-clean pattern):
+  a locality-inducing front end with a global head. Tests whether the kernel
+  front end rescues the network's labelling, or whether the head generalises
+  beyond the kernel and mislabels anyway."""
+  name = 'rff_mlp'
+
+  def __init__(self, q0, label, size, n_features=256, lengthscale=1.5, **kw):
+    self.phi = RFFFeatures(n_features, lengthscale, kw.get('seed', 0))
+    super().__init__(q0, label, size, in_dim=n_features, **kw)
+
+  # the network sees phi(s) instead of s/size; override the input mappings
+  def _x(self, s):
+    return self.jnp.asarray(self.phi(np.asarray(s, dtype=np.float32)[None])[0])
+
+  def q(self, s):
+    return np.asarray(self._q_fn(self.pq, self._x(s)[None]))[0]
+
+  def l(self, s):
+    return float(self._l_fn(self.pl, self._x(s)[None])[0])
+
+  def q_update(self, s, a, target):
+    before = self.q(s)
+    idx = self._sample(self.nq)
+    pos = self.nq % self.cap
+    self.bq_x[pos], self.bq_a[pos], self.bq_y[pos] = s, a, target
+    self.nq += 1
+    idx = np.append(idx, pos)
+    self.pq, self.sq = self._q_step(self.pq, self.sq, self.jnp.asarray(self.phi(self.bq_x[idx])),
+                                    self.jnp.asarray(self.bq_a[idx]), self.jnp.asarray(self.bq_y[idx]))
+    return before, self.q(s)
+
+  def l_update(self, s, target):
+    idx = self._sample(self.nl)
+    pos = self.nl % self.cap
+    self.bl_x[pos], self.bl_y[pos] = s, target
+    self.nl += 1
+    idx = np.append(idx, pos)
+    self.pl, self.sl = self._l_step(self.pl, self.sl, self.jnp.asarray(self.phi(self.bl_x[idx])),
+                                    self.jnp.asarray(self.bl_y[idx]))
+
+  def q_batch(self, P):
+    return np.asarray(self._q_fn(self.pq, self.jnp.asarray(self.phi(P))))
+
+  def learnt_batch(self, P):
+    return np.asarray(self._l_fn(self.pl, self.jnp.asarray(self.phi(P)))) > self.label.tau_l
+
+
 def make_learner(kind: str, q0: float, label: LabelConfig, size: int, seed: int, **kw) -> Learner:
   if kind == 'tabular':
     return TabularCells(q0, label, **kw)
@@ -408,4 +513,8 @@ def make_learner(kind: str, q0: float, label: LabelConfig, size: int, seed: int,
     return MLP(q0, label, size=size, seed=seed, **kw)
   if kind == 'gp':
     return GP(q0, label, seed=seed, **kw)
+  if kind == 'rff_linear':
+    return RFFLinear(q0, label, size=size, seed=seed, **kw)
+  if kind == 'rff_mlp':
+    return RFFMLP(q0, label, size=size, seed=seed, **kw)
   raise ValueError(kind)

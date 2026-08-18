@@ -99,6 +99,8 @@ def variants(size):
     'tilecoding': replace(base, learner='tilecoding', learner_kwargs=dict(n_tilings=8, tile_width=1.0)),
     'mlp': replace(base, learner='mlp', learner_kwargs=dict(hidden=64, lr=1e-3)),
     'gp': replace(base, learner='gp', learner_kwargs=dict(lengthscale=1.5, cap=1500, tau_std=10.)),
+    'rff_linear': replace(base, learner='rff_linear', learner_kwargs=dict(n_features=1024, lengthscale=0.75, lr=0.05)),
+    'rff_mlp': replace(base, learner='rff_mlp', learner_kwargs=dict(n_features=256, lengthscale=1.5, hidden=64, lr=1e-3)),
   }
 
 

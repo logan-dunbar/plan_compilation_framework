@@ -20,8 +20,9 @@ import seaborn as sns
 
 RESULTS = 'results'
 FIGURES = os.path.join(RESULTS, 'figures')
-LABELS = {'tabular': 'Tabular (cells)', 'tilecoding': 'Tile coding', 'mlp': 'Neural network', 'gp': 'Gaussian process'}
-ORDER = ['tabular', 'tilecoding', 'mlp', 'gp']
+LABELS = {'tabular': 'Tabular (cells)', 'tilecoding': 'Tile coding', 'mlp': 'Neural network', 'gp': 'Gaussian process',
+          'rff_linear': 'RFF + linear', 'rff_mlp': 'RFF + neural network'}
+ORDER = ['tabular', 'tilecoding', 'rff_linear', 'gp', 'rff_mlp', 'mlp']
 sns.set_theme(style='whitegrid', context='paper', font_scale=1.15,
               rc={'axes.spines.top': False, 'axes.spines.right': False, 'legend.frameon': False})
 
