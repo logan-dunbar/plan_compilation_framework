@@ -8,3 +8,5 @@
 [t=0.0182472s, 12944 KB] FactPairs: 960
 [t=0.0182671s, 12944 KB] Bytes per state: 60
 [t=0.0185753s, 13076 KB] Plan Compilation Framework: mode=pcf, episodes=30000
+Peak memory: 14252276 KB
+caught signal 15 -- exiting

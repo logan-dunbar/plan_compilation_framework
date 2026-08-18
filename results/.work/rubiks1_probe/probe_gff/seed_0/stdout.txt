@@ -11,3 +11,10 @@
 [t=0.00820172s, 12564 KB] FactPairs: 960
 [t=0.00822208s, 12564 KB] Bytes per state: 60
 [t=0.0083788s, 12564 KB] Plan Compilation Framework: mode=probe, episodes=100
+[t=826.002s, 193588 KB] Actual search time: 825.994s
+[t=826.002s, 193588 KB] PCF episodes run: 100
+[t=826.002s, 193588 KB] PCF learnt states: 0
+[t=826.002s, 193588 KB] Search time: 825.994s
+[t=826.002s, 193588 KB] Total time: 826.002s
+Solution found.
+Peak memory: 193588 KB
