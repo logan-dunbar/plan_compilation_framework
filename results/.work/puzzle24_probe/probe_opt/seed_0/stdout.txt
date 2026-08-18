@@ -1,0 +1,9 @@
+[t=3.2249e-05s, 11100 KB] reading input...
+[t=0.00565583s, 12340 KB] done reading input!
+[t=0.00649153s, 12736 KB] Building successor generator...done!
+[t=0.00713313s, 13000 KB] peak memory difference for successor generator creation: 264 KB
+[t=0.00715414s, 13000 KB] time for successor generation creation: 0.000550386s
+[t=0.00717892s, 13000 KB] Variables: 25
+[t=0.00720025s, 13000 KB] FactPairs: 625
+[t=0.00722015s, 13000 KB] Bytes per state: 20
+[t=0.00750568s, 13264 KB] Plan Compilation Framework: mode=probe, episodes=100

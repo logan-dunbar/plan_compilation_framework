@@ -1,0 +1,16 @@
+[t=4.5207e-05s, 11100 KB] reading input...
+[t=0.000872388s, 11100 KB] done reading input!
+[t=0.00178961s, 11496 KB] Building successor generator...done!
+[t=0.00193781s, 11628 KB] peak memory difference for successor generator creation: 132 KB
+[t=0.00195835s, 11628 KB] time for successor generation creation: 6.1152e-05s
+[t=0.00198081s, 11628 KB] Variables: 8
+[t=0.00200405s, 11628 KB] FactPairs: 40
+[t=0.00202706s, 11628 KB] Bytes per state: 4
+[t=0.00234894s, 11892 KB] Plan Compilation Framework: mode=probe, episodes=100
+[t=0.494059s, 12080 KB] Actual search time: 0.491631s
+[t=0.494082s, 12080 KB] PCF episodes run: 100
+[t=0.494082s, 12080 KB] PCF learnt states: 0
+[t=0.494082s, 12080 KB] Search time: 0.491734s
+[t=0.494082s, 12080 KB] Total time: 0.494082s
+Solution found.
+Peak memory: 12080 KB

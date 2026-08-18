@@ -1,0 +1,13 @@
+[t=3.4652e-05s, 11100 KB] reading input...
+[t=0.00538122s, 11632 KB] done reading input!
+[t=0.00622401s, 12028 KB] Building successor generator...done!
+[t=0.00631426s, 12028 KB] peak memory difference for successor generator creation: 0 KB
+[t=0.00633543s, 12028 KB] time for successor generation creation: 4.156e-06s
+[t=0.00635817s, 12028 KB] Variables: 480
+[t=0.00637911s, 12028 KB] FactPairs: 960
+[t=0.00639947s, 12028 KB] Bytes per state: 60
+[t=0.0066891s, 12292 KB] Plan Compilation Framework: mode=probe, episodes=100
+This configuration does not support conditional effects (operator b )!
+Terminating.
+Tried to use unsupported feature.
+Peak memory: 12292 KB

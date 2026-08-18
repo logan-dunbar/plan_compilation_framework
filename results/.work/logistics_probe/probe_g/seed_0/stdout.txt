@@ -1,0 +1,17 @@
+[t=4.8152e-05s, 11100 KB] reading input...
+[t=0.00079341s, 11232 KB] done reading input!
+[t=0.00170661s, 11620 KB] Initializing context-enhanced additive heuristic...
+[t=0.00195957s, 11620 KB] Building successor generator...done!
+[t=0.00210738s, 11620 KB] peak memory difference for successor generator creation: 0 KB
+[t=0.00212827s, 11620 KB] time for successor generation creation: 7.334e-05s
+[t=0.00215178s, 11620 KB] Variables: 15
+[t=0.002174s, 11620 KB] FactPairs: 142
+[t=0.00219398s, 11620 KB] Bytes per state: 8
+[t=0.00259065s, 11876 KB] Plan Compilation Framework: mode=probe, episodes=100
+[t=0.230294s, 12140 KB] Actual search time: 0.227594s
+[t=0.230323s, 12140 KB] PCF episodes run: 100
+[t=0.230323s, 12140 KB] PCF learnt states: 0
+[t=0.230323s, 12140 KB] Search time: 0.227738s
+[t=0.230323s, 12140 KB] Total time: 0.230323s
+Solution found.
+Peak memory: 12140 KB

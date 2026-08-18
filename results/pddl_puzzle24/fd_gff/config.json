@@ -1,0 +1,21 @@
+{
+  "domain": "puzzle24",
+  "files": [
+    "/home/logan/dev/plan_work/plan_compilation_framework/domains/sliding_tile/domain.pddl",
+    "/home/logan/dev/plan_work/plan_compilation_framework/domains/sliding_tile/p24-s120-0.pddl"
+  ],
+  "agent": {
+    "mode": "planner",
+    "engine": "gff"
+  },
+  "config": {
+    "episodes": 200,
+    "walk_min": 5,
+    "walk_max": 30,
+    "max_episode_steps": 20000,
+    "q0": -1000.0,
+    "anneal_frac": 0.08,
+    "eps_anneal_frac": 0.5
+  },
+  "search": "pcf(lazy_greedy([hff], preferred=[hff], verbosity=silent), mode=planner, episodes=200, walk_min=5, walk_max=30, max_episode_steps=20000, q0=-1000.0, anneal=16, eps_anneal=100, log_file=episodes.csv, log_every=0, random_seed=0)"
+}

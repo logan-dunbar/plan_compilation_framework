@@ -36,19 +36,54 @@ FD_BIN = os.path.join(FD_ROOT, 'builds', 'release', 'bin', 'downward')
 FD_PY = os.path.join(FD_ROOT, 'fast-downward.py')
 BENCH = os.path.abspath(os.path.join(ROOT, '..', 'downward-benchmarks'))
 
+def _b(domain_dir, problem, domain_file='domain.pddl'):
+  return (f'{BENCH}/{domain_dir}/{domain_file}', f'{BENCH}/{domain_dir}/{problem}')
+
+
 DOMAINS = {
-  'gripper': (f'{BENCH}/gripper/domain.pddl', f'{BENCH}/gripper/prob01.pddl'),
-  'depot': (f'{BENCH}/depot/domain.pddl', f'{BENCH}/depot/p01.pddl'),
-  'depot3': (f'{BENCH}/depot/domain.pddl', f'{BENCH}/depot/p03.pddl'),
-  'blocks15': (f'{BENCH}/blocks/domain.pddl', f'{BENCH}/blocks/probBLOCKS-15-0.pddl'),
+  # ECML'22 domains
+  'gripper': _b('gripper', 'prob01.pddl'),
+  'depot': _b('depot', 'p01.pddl'),
+  'depot3': _b('depot', 'p03.pddl'),
+  'depot5': _b('depot', 'p05.pddl'),
+  'blocks15': _b('blocks', 'probBLOCKS-15-0.pddl'),
+  'blocks15b': _b('blocks', 'probBLOCKS-15-1.pddl'),
+  'blocks17': _b('blocks', 'probBLOCKS-17-0.pddl'),
   'puzzle15': (f'{ROOT}/domains/sliding_tile/domain.pddl',
                f'{ROOT}/domains/sliding_tile/p15-s80-0.pddl'),
+  'puzzle24': (f'{ROOT}/domains/sliding_tile/domain.pddl',
+               f'{ROOT}/domains/sliding_tile/p24-s120-0.pddl'),
+  # reversible puzzles, IPC 2023
+  'rubiks1': _b('rubiks-cube-sat23-adl', 'p01.pddl'),
+  'rubiks3': _b('rubiks-cube-sat23-adl', 'p03.pddl'),
+  'quantum1': _b('quantum-layout-sat23-strips', 'p01.pddl'),
+  'ricochet1': _b('ricochet-robots-sat23-adl', 'p01.pddl'),
+  # classic reversible domains
+  'logistics': _b('logistics00', 'probLOGISTICS-10-0.pddl'),
+  'driverlog3': _b('driverlog', 'p03.pddl'),
+  'zenotravel3': _b('zenotravel', 'p03.pddl'),
+  'rovers3': _b('rovers', 'p03.pddl'),
+  'satellite3': _b('satellite', 'p03-pfile3.pddl'),
+  'miconic5': _b('miconic', 's5-0.pddl'),
+  'gripper5': _b('gripper', 'prob05.pddl'),
+  'parking1': _b('parking-sat11-strips', 'pfile08-031.pddl'),
+  'visitall1': _b('visitall-sat11-strips', 'problem12.pddl'),
+  # action-cost domains (for the cost-blind planner = misspecified model setting)
+  'transport1': _b('transport-sat11-strips', 'p01.pddl'),
+  'transport3': _b('transport-sat11-strips', 'p03.pddl'),
+  'elevators1': _b('elevators-sat11-strips', 'p01.pddl'),
+  'elevators3': _b('elevators-sat11-strips', 'p03.pddl'),
 }
 
 ENGINES = {
   'g': ('hcea=cea()', 'lazy_greedy([hcea], preferred=[hcea], verbosity=silent)'),
   'gff': ('hff=ff()', 'lazy_greedy([hff], preferred=[hff], verbosity=silent)'),
+  # cost-blind planner: plans as if every action cost 1 while the environment
+  # charges the true action costs -- the misspecified-model setting in PDDL
+  'gff_unit': ('hff=ff(transform=adapt_costs(one))',
+               'lazy_greedy([hff], preferred=[hff], cost_type=one, verbosity=silent)'),
   'blind': (None, 'astar(blind(), verbosity=silent)'),
+  'lmcut': (None, 'astar(lmcut(), verbosity=silent)'),   # optimal planner (small instances)
 }
 
 
@@ -63,6 +98,15 @@ AGENTS = {
   'fd_gff': PddlAgent('planner', 'gff'),
   'pcf_fd_g': PddlAgent('pcf', 'g'),
   'pcf_fd_gff': PddlAgent('pcf', 'gff'),
+  'fd_gff_unit': PddlAgent('planner', 'gff_unit'),
+  'pcf_fd_gff_unit': PddlAgent('pcf', 'gff_unit'),
+  'fd_opt': PddlAgent('planner', 'lmcut'),
+  'pcf_fd_opt': PddlAgent('pcf', 'lmcut'),
+  # optimality / planning-time probes: one search per random start, no enactment
+  'probe_opt': PddlAgent('probe', 'lmcut'),
+  'probe_gff': PddlAgent('probe', 'gff'),
+  'probe_g': PddlAgent('probe', 'g'),
+  'probe_gff_unit': PddlAgent('probe', 'gff_unit'),
 }
 
 
@@ -75,10 +119,19 @@ class PddlConfig:
   q0: float = -1000.
   anneal_frac: float = 0.08     # explore_prob / quota anneal (800/10k in GridWorld)
   eps_anneal_frac: float = 0.5  # learner epsilon anneal
+  planner_episodes: int | None = None   # stationary baselines may run fewer episodes
+  probe_time: float = 120.      # per-search time limit for probes (seconds)
+
+  def episodes_for(self, agent: PddlAgent) -> int:
+    if agent.mode == 'planner' and self.planner_episodes:
+      return self.planner_episodes
+    return self.episodes
 
   def search_string(self, agent: PddlAgent, seed: int, log_file: str) -> str:
     _, engine = ENGINES[agent.engine]
-    return (f'pcf({engine}, mode={agent.mode}, episodes={self.episodes}, '
+    if agent.mode == 'probe':
+      engine = engine.replace('verbosity=silent', f'max_time={self.probe_time}, verbosity=silent')
+    return (f'pcf({engine}, mode={agent.mode}, episodes={self.episodes_for(agent)}, '
             f'walk_min={self.walk_min}, walk_max={self.walk_max}, '
             f'max_episode_steps={self.max_episode_steps}, q0={self.q0}, '
             f'anneal={max(1, int(self.episodes * self.anneal_frac))}, '
@@ -93,16 +146,20 @@ def translate(domain: str, work: str) -> str:
   os.makedirs(out, exist_ok=True)
   sas = os.path.join(out, 'output.sas')
   if not os.path.exists(sas):
-    subprocess.run([sys.executable, FD_PY, '--translate', dom, prob],
-                   cwd=out, check=True, capture_output=True)
+    proc = subprocess.run([sys.executable, FD_PY, '--translate', dom, prob],
+                          cwd=out, capture_output=True, text=True)
+    if proc.returncode != 0 or not os.path.exists(sas):
+      tail = (proc.stdout + proc.stderr).strip().splitlines()[-3:]
+      print(f'  SKIP {domain}: translate exit {proc.returncode}: {" | ".join(tail)}', flush=True)
+      return None
   return sas
 
 
 def run_job(job):
-  domain, agent_name, seed, cfg, sas, out_dir = job
+  domain, agent_name, seed, cfg, sas, out_dir, tag = job
   agent = AGENTS[agent_name]
   evaluator, _ = ENGINES[agent.engine]
-  job_dir = os.path.join(out_dir, '.work', domain, agent_name, f'seed_{seed}')
+  job_dir = os.path.join(out_dir, '.work', domain + tag, agent_name, f'seed_{seed}')
   os.makedirs(job_dir, exist_ok=True)
   log_file = os.path.join(job_dir, 'episodes.csv')
 
@@ -122,7 +179,7 @@ def run_job(job):
   df['terminated'] = df['terminated'].astype(bool)
   df['cache_hits'] = 0
   df['wall_time'] = df['plan_time']
-  res_dir = os.path.join(out_dir, f'pddl_{domain}', agent_name)
+  res_dir = os.path.join(out_dir, f'pddl_{domain}{tag}', agent_name)
   os.makedirs(res_dir, exist_ok=True)
   df.to_parquet(os.path.join(res_dir, f'seed_{seed}.parquet'))
   with open(os.path.join(res_dir, 'config.json'), 'w') as f:
@@ -142,19 +199,25 @@ def main():
   ap.add_argument('--episodes', type=int, default=None)
   ap.add_argument('--seeds', type=int, default=None)
   ap.add_argument('--workers', type=int, default=None)
+  ap.add_argument('--planner-episodes', type=int, default=None,
+                  help='episodes for planner-mode (stationary) agents; default = --episodes')
+  ap.add_argument('--probe-time', type=float, default=120.)
   ap.add_argument('--out', default='results')
+  ap.add_argument('--tag', default='', help='suffix for the results directory (pddl_<domain><tag>)')
   args = ap.parse_args()
   args.out = os.path.abspath(args.out)
 
   if args.preset == 'smoke':
     domains = args.domains or ['gripper', 'depot', 'blocks15', 'puzzle15']
     agents = args.agents or ['fd_gff', 'pcf_fd_gff']
-    cfg = PddlConfig(episodes=args.episodes or 300)
+    cfg = PddlConfig(episodes=args.episodes or 300, planner_episodes=args.planner_episodes,
+                     probe_time=args.probe_time)
     seeds = args.seeds or 1
   else:
     domains = args.domains or ['depot', 'blocks15', 'puzzle15']
     agents = args.agents or list(AGENTS)
-    cfg = PddlConfig(episodes=args.episodes or 20_000)
+    cfg = PddlConfig(episodes=args.episodes or 20_000, planner_episodes=args.planner_episodes,
+                     probe_time=args.probe_time)
     seeds = args.seeds or 5
 
   assert os.path.exists(FD_BIN), f'build Fast Downward first: {FD_BIN}'
@@ -162,9 +225,11 @@ def main():
   jobs = []
   for d in domains:
     sas = translate(d, work)
+    if sas is None:
+      continue
     for a in agents:
       for s in range(seeds):
-        jobs.append((d, a, s, cfg, sas, args.out))
+        jobs.append((d, a, s, cfg, sas, args.out, args.tag))
 
   workers = min(args.workers or max(1, os.cpu_count() - 4), len(jobs))
   print(f'pddl/{args.preset}: {len(jobs)} jobs on {workers} workers '

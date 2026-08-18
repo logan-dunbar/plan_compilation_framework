@@ -1,0 +1,20 @@
+[t=3.9529e-05s, 11100 KB] reading input...
+[t=0.000412779s, 11100 KB] done reading input!
+[t=0.0012698s, 11496 KB] Simplifying 132 unary operators... done! [132 unary operators]
+[t=0.00134156s, 11496 KB] time to simplify: 9.9539e-05s
+[t=0.00137736s, 11496 KB] Initializing additive heuristic...
+[t=0.00139842s, 11496 KB] Initializing FF heuristic...
+[t=0.00147137s, 11496 KB] Building successor generator...done!
+[t=0.00158028s, 11496 KB] peak memory difference for successor generator creation: 0 KB
+[t=0.0016004s, 11496 KB] time for successor generation creation: 3.1728e-05s
+[t=0.00162316s, 11496 KB] Variables: 9
+[t=0.00164372s, 11496 KB] FactPairs: 41
+[t=0.00166308s, 11496 KB] Bytes per state: 4
+[t=0.00195187s, 11760 KB] Plan Compilation Framework: mode=probe, episodes=100
+[t=0.0962464s, 11916 KB] Actual search time: 0.0942224s
+[t=0.0962762s, 11916 KB] PCF episodes run: 100
+[t=0.0962762s, 11916 KB] PCF learnt states: 0
+[t=0.0962762s, 11916 KB] Search time: 0.094325s
+[t=0.0962762s, 11916 KB] Total time: 0.0962762s
+Solution found.
+Peak memory: 11916 KB
