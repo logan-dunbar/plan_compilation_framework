@@ -121,6 +121,14 @@ class PddlConfig:
   eps_anneal_frac: float = 0.5  # learner epsilon anneal
   planner_episodes: int | None = None   # stationary baselines may run fewer episodes
   probe_time: float = 120.      # per-search time limit for probes (seconds)
+  # Exploration schedule shape (see pcf_search.cc): 'linear' is the default used by
+  # every published run; 'cyclical' decays exponentially from a per-cycle peak (the
+  # peak shrinking by cycle_alpha each cycle) to the schedule's end value -- repeated,
+  # shrinking local sweeps instead of a long stay near maximum exploration, which on
+  # a large state space grows the tables like breadth-first Q-learning.
+  schedule: str = 'linear'
+  cycle_episodes: int = 10_000
+  cycle_alpha: float = 0.7
 
   def episodes_for(self, agent: PddlAgent) -> int:
     if agent.mode == 'planner' and self.planner_episodes:
@@ -136,6 +144,8 @@ class PddlConfig:
             f'max_episode_steps={self.max_episode_steps}, q0={self.q0}, '
             f'anneal={max(1, int(self.episodes * self.anneal_frac))}, '
             f'eps_anneal={max(1, int(self.episodes * self.eps_anneal_frac))}, '
+            f'schedule={self.schedule}, cycle_episodes={self.cycle_episodes}, '
+            f'cycle_alpha={self.cycle_alpha}, '
             f'log_file={log_file}, log_every=0, random_seed={seed})')
 
 
@@ -204,6 +214,10 @@ def main():
   ap.add_argument('--probe-time', type=float, default=120.)
   ap.add_argument('--out', default='results')
   ap.add_argument('--tag', default='', help='suffix for the results directory (pddl_<domain><tag>)')
+  ap.add_argument('--schedule', choices=['linear', 'cyclical'], default='linear',
+                  help='exploration schedule shape (cyclical = BARSAC-style shrinking cycles)')
+  ap.add_argument('--cycle-episodes', type=int, default=10_000)
+  ap.add_argument('--cycle-alpha', type=float, default=0.7)
   args = ap.parse_args()
   args.out = os.path.abspath(args.out)
 
@@ -211,13 +225,17 @@ def main():
     domains = args.domains or ['gripper', 'depot', 'blocks15', 'puzzle15']
     agents = args.agents or ['fd_gff', 'pcf_fd_gff']
     cfg = PddlConfig(episodes=args.episodes or 300, planner_episodes=args.planner_episodes,
-                     probe_time=args.probe_time)
+                     probe_time=args.probe_time,
+                     schedule=args.schedule, cycle_episodes=args.cycle_episodes,
+                     cycle_alpha=args.cycle_alpha)
     seeds = args.seeds or 1
   else:
     domains = args.domains or ['depot', 'blocks15', 'puzzle15']
     agents = args.agents or list(AGENTS)
     cfg = PddlConfig(episodes=args.episodes or 20_000, planner_episodes=args.planner_episodes,
-                     probe_time=args.probe_time)
+                     probe_time=args.probe_time,
+                     schedule=args.schedule, cycle_episodes=args.cycle_episodes,
+                     cycle_alpha=args.cycle_alpha)
     seeds = args.seeds or 5
 
   assert os.path.exists(FD_BIN), f'build Fast Downward first: {FD_BIN}'
@@ -236,15 +254,34 @@ def main():
         f'({len(domains)} domains x {len(agents)} agents x {seeds} seeds x {cfg.episodes} episodes)',
         flush=True)
   t0 = time.perf_counter()
+  failures = 0
   with Pool(processes=workers) as pool:
     for d, a, s, wall, summary, err in pool.imap_unordered(run_job, jobs):
       if err:
+        failures += 1
         print(f'  FAILED {d:>9} {a:>11} seed {s}: {err}', flush=True)
+        # The driver streams episodes.csv as it runs, so a killed seed still has its
+        # curve up to the kill -- convert it to a clearly-marked partial parquet
+        # rather than losing it (the Rubik's 100k OOM lost 28h for want of this).
+        csv = os.path.join(args.out, '.work', d + args.tag, a, f'seed_{s}', 'episodes.csv')
+        if os.path.exists(csv):
+          try:
+            part = pd.read_csv(csv, on_bad_lines='skip')
+            res_dir = os.path.join(args.out, f'pddl_{d}{args.tag}', a)
+            os.makedirs(res_dir, exist_ok=True)
+            dest = os.path.join(res_dir, f'seed_{s}_partial{len(part)//1000}k.parquet')
+            part.to_parquet(dest)
+            print(f'    salvaged {len(part)} episodes -> {dest}', flush=True)
+          except Exception as exc:      # salvage must never mask the failure itself
+            print(f'    salvage failed: {exc}', flush=True)
       else:
         rew, exp, learnt = summary
         print(f'  done {d:>9} {a:>11} seed {s}: {wall:7.1f}s  tail reward {rew:8.1f}  '
               f'tail expansions {exp:9.1f}  learnt {learnt}', flush=True)
-  print(f'pddl/{args.preset}: finished in {time.perf_counter() - t0:.1f}s', flush=True)
+  print(f'pddl/{args.preset}: finished in {time.perf_counter() - t0:.1f}s'
+        + (f'  ({failures} FAILED)' if failures else ''), flush=True)
+  if failures:
+    sys.exit(1)
 
 
 if __name__ == '__main__':
