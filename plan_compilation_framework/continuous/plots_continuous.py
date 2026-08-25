@@ -2,9 +2,17 @@
 
   uv run python -m plan_compilation_framework.continuous.plots_continuous
 
-Four panels over episodes (median over seeds, IQR band): fraction of probe
-states labelled learnt, label churn per episode, false-learnt rate, and
-reward; plus a summary table. Writes results/figures/continuous_*.{png,pdf}.
+Five panels over episodes (median over seeds, IQR band): fraction of probe
+states labelled learnt, label churn per episode, false-learnt rate, reward and
+states expanded; plus a summary table. Writes
+results/figures/continuous_*.{png,pdf}.
+
+The panels are laid out three over two rather than five across. Five across is
+what fits the data and not what fits the page: at \textwidth each panel is
+about 32 mm wide, which is too narrow to read a curve out of. Three over two
+gives each panel roughly 2.5x the area for the same page width, and the
+gridspec below is six columns wide so the bottom row of two can be centred
+under the top row of three.
 """
 from __future__ import annotations
 
@@ -51,7 +59,21 @@ def main():
             ('false_learnt', 'False-learnt rate', False),
             ('reward', 'Reward per episode', False),
             ('expansions', 'States expanded per episode', True)]
-  fig, axes = plt.subplots(1, len(panels), figsize=(4.0 * len(panels), 3.8))
+  # Six columns so the bottom row of two centres under the top row of three:
+  # top spans [0:2] [2:4] [4:6], bottom spans [1:3] [3:5], leaving half a panel
+  # of margin at each end of the second row.
+  # 10.5in wide, not 15: the figure is placed at \textwidth (about 160 mm), so a
+  # wider canvas is only downscaled harder and the text shrinks with it. At 15in
+  # a 10pt label renders at about 4.4pt; at 10.5in it renders at 6.3pt for the
+  # same footprint on the page. Aspect is what controls the footprint, not size.
+  fig = plt.figure(figsize=(10.5, 5.9))
+  # bottom=0.19 reserves a strip for the shared legend: at 0.13 it sat on top of
+  # the second row's "Episode" labels.
+  gs = fig.add_gridspec(2, 6, hspace=0.42, wspace=0.38,
+                        left=0.055, right=0.99, top=0.95, bottom=0.19)
+  slots = [gs[0, 0:2], gs[0, 2:4], gs[0, 4:6], gs[1, 1:3], gs[1, 3:5]]
+  assert len(slots) == len(panels), (len(slots), len(panels))
+  axes = [fig.add_subplot(sl) for sl in slots]
   for ax, (col, title, log) in zip(axes, panels):
     for n in names:
       arr = np.stack([d[col].rolling(w, min_periods=1).mean().to_numpy() for d in runs[n]])
@@ -64,8 +86,12 @@ def main():
     if log:
       ax.set_yscale('log')
     ax.set(title=title, xlabel='Episode')
-  axes[0].legend(fontsize=8.5)
-  fig.tight_layout()
+  # One shared legend under the figure rather than one crammed into a panel:
+  # with two rows there is no panel with room to spare, and the series are the
+  # same in all five.
+  handles, labels = axes[0].get_legend_handles_labels()
+  fig.legend(handles, labels, loc='lower center', ncol=len(labels),
+             fontsize=10.5, bbox_to_anchor=(0.5, 0.005))
   os.makedirs(FIGURES, exist_ok=True)
   fig.savefig(os.path.join(FIGURES, 'continuous_curves.png'), dpi=160, bbox_inches='tight')
   fig.savefig(os.path.join(FIGURES, 'continuous_curves.pdf'), bbox_inches='tight')

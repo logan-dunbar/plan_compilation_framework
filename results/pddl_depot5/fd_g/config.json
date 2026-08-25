@@ -16,8 +16,11 @@
     "q0": -1000.0,
     "anneal_frac": 0.08,
     "eps_anneal_frac": 0.5,
-    "planner_episodes": 3000,
-    "probe_time": 120.0
+    "planner_episodes": null,
+    "probe_time": 120.0,
+    "schedule": "linear",
+    "cycle_episodes": 10000,
+    "cycle_alpha": 0.7
   },
-  "search": "pcf(lazy_greedy([hcea], preferred=[hcea], verbosity=silent), mode=planner, episodes=3000, walk_min=5, walk_max=30, max_episode_steps=20000, q0=-1000.0, anneal=2400, eps_anneal=15000, log_file=episodes.csv, log_every=0, random_seed=1)"
+  "search": "pcf(lazy_greedy([hcea], preferred=[hcea], verbosity=silent), mode=planner, episodes=30000, walk_min=5, walk_max=30, max_episode_steps=20000, q0=-1000.0, anneal=2400, eps_anneal=15000, schedule=linear, cycle_episodes=10000, cycle_alpha=0.7, log_file=episodes.csv, log_every=0, random_seed=2)"
 }
