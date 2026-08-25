@@ -1,0 +1,26 @@
+{
+  "domain": "rubiks1",
+  "files": [
+    "/home/logan/dev/plan_work/downward-benchmarks/rubiks-cube-sat23-adl/domain.pddl",
+    "/home/logan/dev/plan_work/downward-benchmarks/rubiks-cube-sat23-adl/p01.pddl"
+  ],
+  "agent": {
+    "mode": "pcf",
+    "engine": "gff"
+  },
+  "config": {
+    "episodes": 50000,
+    "walk_min": 5,
+    "walk_max": 30,
+    "max_episode_steps": 20000,
+    "q0": -1000.0,
+    "anneal_frac": 0.08,
+    "eps_anneal_frac": 0.5,
+    "planner_episodes": null,
+    "probe_time": 120.0,
+    "schedule": "cyclical",
+    "cycle_episodes": 10000,
+    "cycle_alpha": 0.7
+  },
+  "search": "pcf(lazy_greedy([hff], preferred=[hff], verbosity=silent), mode=pcf, episodes=50000, walk_min=5, walk_max=30, max_episode_steps=20000, q0=-1000.0, anneal=4000, eps_anneal=25000, schedule=cyclical, cycle_episodes=10000, cycle_alpha=0.7, log_file=episodes.csv, log_every=0, random_seed=0)"
+}

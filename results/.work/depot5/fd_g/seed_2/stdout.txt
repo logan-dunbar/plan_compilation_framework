@@ -1,10 +1,10 @@
-[t=5.7576e-05s, 11100 KB] reading input...
-[t=0.00414274s, 11520 KB] done reading input!
-[t=0.00537196s, 11916 KB] Initializing context-enhanced additive heuristic...
-[t=0.0116466s, 12720 KB] Building successor generator...done!
-[t=0.0120171s, 12720 KB] peak memory difference for successor generator creation: 0 KB
-[t=0.0120421s, 12720 KB] time for successor generation creation: 0.000205068s
-[t=0.0120683s, 12720 KB] Variables: 38
-[t=0.0120927s, 12720 KB] FactPairs: 248
-[t=0.0121169s, 12720 KB] Bytes per state: 12
-[t=0.0125217s, 12984 KB] Plan Compilation Framework: mode=planner, episodes=3000
+[t=6.5949e-05s, 11100 KB] reading input...
+[t=0.00408029s, 11520 KB] done reading input!
+[t=0.00545384s, 11916 KB] Initializing context-enhanced additive heuristic...
+[t=0.00983439s, 12724 KB] Building successor generator...done!
+[t=0.0101593s, 12724 KB] peak memory difference for successor generator creation: 0 KB
+[t=0.0102247s, 12724 KB] time for successor generation creation: 0.000200862s
+[t=0.0102663s, 12724 KB] Variables: 38
+[t=0.0102965s, 12724 KB] FactPairs: 248
+[t=0.0103235s, 12724 KB] Bytes per state: 12
+[t=0.0107228s, 12988 KB] Plan Compilation Framework: mode=planner, episodes=30000

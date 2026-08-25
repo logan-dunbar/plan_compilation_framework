@@ -1,0 +1,5 @@
+episode,steps,reward,terminated,expansions,plans_computed,plans_failed,plans_empty,planner_steps,learner_steps,explorer_steps,n_learnt,plan_time
+0,193,-4944,1,6083,1,0,0,193,0,0,0,4.05629
+1,193,-4607,1,16871,1,0,0,193,0,0,0,11.2954
+2,223,-4956,1,13296,1,0,0,223,0,0,0,8.59894
+3,231,-5847,1,4865,1,0,0,231,0,0,0,2.94945

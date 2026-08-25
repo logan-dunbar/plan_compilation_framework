@@ -1,20 +1,20 @@
-[t=3.2839e-05s, 11100 KB] reading input...
-[t=0.000312508s, 11100 KB] done reading input!
-[t=0.000992899s, 11496 KB] Simplifying 132 unary operators... done! [132 unary operators]
-[t=0.00104788s, 11496 KB] time to simplify: 7.6345e-05s
-[t=0.00107507s, 11496 KB] Initializing additive heuristic...
-[t=0.00109134s, 11496 KB] Initializing FF heuristic...
-[t=0.00114275s, 11496 KB] Building successor generator...done!
-[t=0.00121514s, 11496 KB] peak memory difference for successor generator creation: 0 KB
-[t=0.00123031s, 11496 KB] time for successor generation creation: 2.3745e-05s
-[t=0.00124732s, 11496 KB] Variables: 9
-[t=0.00126238s, 11496 KB] FactPairs: 41
-[t=0.00127736s, 11496 KB] Bytes per state: 4
-[t=0.00149731s, 11760 KB] Plan Compilation Framework: mode=planner, episodes=200
-[t=0.100322s, 12048 KB] Actual search time: 0.0987736s
-[t=0.100343s, 12048 KB] PCF episodes run: 200
-[t=0.100343s, 12048 KB] PCF learnt states: 0
-[t=0.100343s, 12048 KB] Search time: 0.0988464s
-[t=0.100343s, 12048 KB] Total time: 0.100343s
+[t=4.6931e-05s, 11100 KB] reading input...
+[t=0.000505839s, 11100 KB] done reading input!
+[t=0.00148946s, 11496 KB] Simplifying 132 unary operators... done! [132 unary operators]
+[t=0.00158205s, 11496 KB] time to simplify: 0.000128303s
+[t=0.00162934s, 11496 KB] Initializing additive heuristic...
+[t=0.00165457s, 11496 KB] Initializing FF heuristic...
+[t=0.00174142s, 11496 KB] Building successor generator...done!
+[t=0.00185715s, 11496 KB] peak memory difference for successor generator creation: 0 KB
+[t=0.00187859s, 11496 KB] time for successor generation creation: 3.3461e-05s
+[t=0.00190272s, 11496 KB] Variables: 9
+[t=0.00192331s, 11496 KB] FactPairs: 41
+[t=0.00194314s, 11496 KB] Bytes per state: 4
+[t=0.00237375s, 11760 KB] Plan Compilation Framework: mode=planner, episodes=30000
+[t=22.8837s, 72740 KB] Actual search time: 22.8812s
+[t=22.8838s, 72740 KB] PCF episodes run: 30000
+[t=22.8838s, 72740 KB] PCF learnt states: 0
+[t=22.8838s, 72740 KB] Search time: 22.8814s
+[t=22.8838s, 72740 KB] Total time: 22.8838s
 Solution found.
-Peak memory: 12048 KB
+Peak memory: 72740 KB

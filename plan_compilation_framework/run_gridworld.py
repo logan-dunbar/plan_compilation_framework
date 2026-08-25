@@ -123,8 +123,26 @@ def build_preset(name: str) -> ExperimentSpec:
                           agents=agents)
 
   if name == 'ablations':
-    env = EnvSpec(size=(20, 20), max_steps=100_000)
-    base = paper_pcf_config(q0=-300., anneal=300, episodes=1000)
+    # THE HEADLINE ENVIRONMENT, not a small one. This preset ran at 20x20 for
+    # 1000 episodes until 26 Aug 2026, and one of its rows was an artefact of that
+    # choice: A5_unbounded_quota reported a 7x REDUCTION in total search, which
+    # reads as "removing the quota is free". It is not. A 20x20 grid has ~260
+    # reachable states, so an explorer with no quota simply visits all of them
+    # within a few hundred episodes, every state becomes learnt, and no search is
+    # ever needed again -- the saving is the grid being small enough to enumerate,
+    # not a property of the ablation. At 50x50 the same explorer has ~1600 states
+    # to cover and pays for them, which is the number the chapter needs.
+    #
+    # Matching the headline preset exactly (50x50, 10 seeds, 10k episodes, the
+    # same q0 and anneal) makes `base` here a REPLICATION of `pcf_astar` there,
+    # not a duplicate of it: the env is seeded by the seed index alone so both
+    # face the same ten mazes, but run_single seeds the agent with
+    # `seed * 10_007 + agent_index` and the two presets order their agents
+    # differently, so the agent's own randomness is an independent stream. The
+    # two therefore have to agree within seed noise, and they do (-474 +- 86
+    # here against -506 +- 113 there), which is a free check on both.
+    env = EnvSpec(size=(50, 50), max_steps=1_000_000)
+    base = paper_pcf_config(q0=-1250., anneal=800, episodes=10_000)
     agents = {
       'base': AgentSpec('pcf', planner='astar', config=base),
       'A1_optimistic_q0': AgentSpec('pcf', planner='astar',
@@ -144,7 +162,7 @@ def build_preset(name: str) -> ExperimentSpec:
       'R1_plan_cache': AgentSpec('pcf', planner='astar',
                                  config=replace(base, use_plan_cache=True)),
     }
-    return ExperimentSpec(name='ablations', env=env, episodes=1000, seeds=5,
+    return ExperimentSpec(name='ablations', env=env, episodes=10_000, seeds=10,
                           agents=agents)
 
   if name == 'baselines':
