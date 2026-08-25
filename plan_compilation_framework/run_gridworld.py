@@ -8,6 +8,24 @@
 
 Presets encode the resubmission's experiment matrix. `paper` reproduces the
 ECML'22 configuration (50x50, harmonic alpha, q0=-1250, no step limit).
+
+EVERY PRESET THE THESIS CITES RUNS AT THE SAME SCALE: 50x50 grids, ten seeds,
+10000 episodes. That is `paper`, `ablations` and `labelling` here, and
+`sensitivity_50x50` in run_diagnostics.py. `smoke`, `validate` and `baselines`
+are development checks and are deliberately small; nothing in the thesis cites
+them.
+
+This was not always true and the cost of it is recorded on `ablations`: that
+preset ran 20x20 for 1000 episodes while the results it supported ran 50x50 for
+10000, and one of its rows said something false as a result. A study quoted
+beside a headline number has to be measured at the headline's scale, or the
+reader cannot tell which differences are the ablation and which are the setting.
+
+The one experiment in this thesis that does NOT follow the rule is the
+continuous-maze study in continuous/, which stays at 20x20 because a single
+Gaussian-process seed there already costs 31-41 hours and the GP is the only
+principled stability signal in that comparison. Chapter 4 states this and states
+it as a limitation.
 """
 from __future__ import annotations
 
@@ -81,6 +99,7 @@ def baseline_agents(episodes: int) -> dict:
 
 def build_preset(name: str) -> ExperimentSpec:
   if name == 'smoke':
+    # DEVELOPMENT ONLY: the smallest thing that exercises the code path.
     env = EnvSpec(size=(12, 12), max_steps=50_000)
     cfg = paper_pcf_config(q0=-300., anneal=100, episodes=300)
     return ExperimentSpec(
@@ -92,6 +111,7 @@ def build_preset(name: str) -> ExperimentSpec:
       })
 
   if name == 'validate':
+    # DEVELOPMENT ONLY: deliberately small and fast. Not cited by the thesis.
     env = EnvSpec(size=(20, 20), max_steps=100_000)
     cfg = paper_pcf_config(q0=-300., anneal=300, episodes=1000)
     return ExperimentSpec(
@@ -106,9 +126,17 @@ def build_preset(name: str) -> ExperimentSpec:
       })
 
   if name == 'labelling':
-    # L1-L5: swap only the learnt-state rule, hold everything else fixed
-    env = EnvSpec(size=(20, 20), max_steps=100_000)
-    base = paper_pcf_config(q0=-300., anneal=300, episodes=1000)
+    # L1-L5: swap only the learnt-state rule, hold everything else fixed.
+    #
+    # THE HEADLINE ENVIRONMENT, for the same reason the ablations use it. This
+    # study ranks rules against one another, so a cheaper grid is defensible in a
+    # way it was not for the ablations -- all four rules move together with the
+    # setting. It is still the wrong choice: a rule that labels almost nothing
+    # (L3) and a rule that labels nearly everything behave differently as the
+    # state space grows, so the ranking is not guaranteed to be scale-free, and
+    # a study quoted beside 50x50 results should be measured on 50x50 grids.
+    env = EnvSpec(size=(50, 50), max_steps=1_000_000)
+    base = paper_pcf_config(q0=-1250., anneal=800, episodes=10_000)
     rules = {
       'L1_jsd': ('jsd', JsdConfig()),
       'L2_argmax_k10': ('argmax', 10, True),
@@ -119,7 +147,7 @@ def build_preset(name: str) -> ExperimentSpec:
                                config=replace(base, label_rule=rule))
               for name_, rule in rules.items()}
     agents['astar'] = AgentSpec('planner', planner='astar')
-    return ExperimentSpec(name='labelling', env=env, episodes=1000, seeds=5,
+    return ExperimentSpec(name='labelling', env=env, episodes=10_000, seeds=10,
                           agents=agents)
 
   if name == 'ablations':
@@ -166,7 +194,11 @@ def build_preset(name: str) -> ExperimentSpec:
                           agents=agents)
 
   if name == 'baselines':
-    # quick 20x20 check of the full comparison set
+    # DEVELOPMENT ONLY, and superseded: `paper` runs this same comparison set at
+    # the headline scale, and that is what the thesis reports. Kept as a fast
+    # sanity check that every agent still constructs and runs. Nothing in the
+    # thesis cites results/baselines -- if that ever changes, this preset has to
+    # move to 50x50 first, for the reason recorded on `ablations`.
     env = EnvSpec(size=(20, 20), max_steps=100_000)
     cfg = paper_pcf_config(q0=-300., anneal=300, episodes=1000)
     agents = baseline_agents(1000)

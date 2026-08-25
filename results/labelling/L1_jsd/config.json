@@ -2,8 +2,8 @@
   "env": {
     "kind": "random",
     "size": [
-      20,
-      20
+      50,
+      50
     ],
     "file_name": null,
     "wall_frac": 0.2,
@@ -11,7 +11,7 @@
     "min_reachable_frac": 0.5,
     "stochastic": true,
     "random_start": true,
-    "max_steps": 100000,
+    "max_steps": 1000000,
     "move_reward": -1.0,
     "bump_reward": -5.0,
     "sand_reward": -100.0
@@ -34,7 +34,7 @@
       "eps_learner": {
         "start": 0.1,
         "stop": 0.01,
-        "steps": 500
+        "steps": 5000
       },
       "eps_explorer": {
         "value": 0.1
@@ -42,14 +42,14 @@
       "explore_prob": {
         "start": 0.1,
         "stop": 0.001,
-        "steps": 300
+        "steps": 800
       },
       "quota_frac": {
         "start": 0.2,
         "stop": 0.05,
-        "steps": 300
+        "steps": 800
       },
-      "q0_learner": -300.0,
+      "q0_learner": -1250.0,
       "q0_explorer": 0.0,
       "label_rule": [
         "jsd",
@@ -76,5 +76,5 @@
     "use_cache": false,
     "model_constant_cost": true
   },
-  "episodes": 1000
+  "episodes": 10000
 }
